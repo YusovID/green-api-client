@@ -1,6 +1,7 @@
 package handler
 
 import (
+	"context"
 	"encoding/json"
 	"log/slog"
 	"net/http"
@@ -30,7 +31,7 @@ func newTestHandler(t *testing.T, stubURL string) *Handler {
 }
 
 func postJSON(target string, body string) *http.Request {
-	return httptest.NewRequest(http.MethodPost, target, strings.NewReader(body))
+	return httptest.NewRequestWithContext(context.Background(), http.MethodPost, target, strings.NewReader(body))
 }
 
 func TestGetSettings(t *testing.T) {
@@ -328,7 +329,7 @@ func TestSuccessResponseBody(t *testing.T) {
 
 	require.Equal(t, http.StatusOK, rec.Code)
 
-	var body map[string]interface{}
+	var body map[string]any
 	require.NoError(t, json.Unmarshal(rec.Body.Bytes(), &body))
 	assert.Equal(t, "79001234567@c.us", body["wid"])
 }

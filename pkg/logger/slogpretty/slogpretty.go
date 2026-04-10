@@ -107,7 +107,7 @@ func (h *PrettyHandler) Handle(_ context.Context, r slog.Record) error {
 		prefix = strings.Join(h.groups, ".") + "."
 	}
 
-	fields := make(map[string]interface{}, r.NumAttrs())
+	fields := make(map[string]any, r.NumAttrs())
 	r.Attrs(func(a slog.Attr) bool {
 		fields[prefix+a.Key] = a.Value.Any()
 		return true
