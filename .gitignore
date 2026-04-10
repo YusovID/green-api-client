@@ -1,0 +1,8 @@
+docs/
+
+# Build artifacts
+bin/
+coverage.out
+
+# VS Code
+.vscode

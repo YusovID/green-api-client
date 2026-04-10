@@ -1,0 +1,48 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>GREEN-API Client</title>
+  <link rel="stylesheet" href="style.css">
+</head>
+<body>
+  <main class="container">
+    <div class="panel panel-left">
+      <section class="section">
+        <h2>Подключение</h2>
+        <input type="text" id="idInstance" placeholder="idInstance">
+        <input type="text" id="apiTokenInstance" placeholder="apiTokenInstance">
+      </section>
+
+      <section class="section">
+        <h2>Получение данных</h2>
+        <button data-action="getSettings">getSettings</button>
+        <button data-action="getStateInstance">getStateInstance</button>
+      </section>
+
+      <section class="section">
+        <h2>Отправка сообщения</h2>
+        <input type="text" id="msgPhone" placeholder="77771234567">
+        <textarea id="msgText" placeholder="Сообщение" rows="3"></textarea>
+        <button data-action="sendMessage">sendMessage</button>
+      </section>
+
+      <section class="section">
+        <h2>Отправка файла</h2>
+        <input type="text" id="filePhone" placeholder="77771234567">
+        <input type="text" id="fileUrl" placeholder="https://my.site.com/img.png">
+        <input type="text" id="fileName" placeholder="image.png">
+        <button data-action="sendFileByUrl">sendFileByUrl</button>
+      </section>
+    </div>
+
+    <div class="panel panel-right">
+      <h2>Ответ:</h2>
+      <textarea id="response" readonly></textarea>
+    </div>
+  </main>
+
+  <script src="script.js"></script>
+</body>
+</html>

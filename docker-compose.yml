@@ -1,0 +1,33 @@
+name: green-api-client
+
+services:
+  app:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: greenapi_app
+    restart: unless-stopped
+    expose:
+      - "8080"
+    environment:
+      - ENV=production
+      - PORT=8080
+    healthcheck:
+      test: ["CMD", "wget", "-qO-", "http://localhost:8080/health"]
+      interval: 10s
+      timeout: 5s
+      retries: 3
+      start_period: 5s
+
+  nginx:
+    image: nginx:1.27-alpine
+    container_name: greenapi_nginx
+    restart: unless-stopped
+    ports:
+      - "80:80"
+    volumes:
+      - ./deployments/nginx/nginx.conf:/etc/nginx/conf.d/default.conf:ro
+      - ./static:/usr/share/nginx/html:ro
+    depends_on:
+      app:
+        condition: service_healthy

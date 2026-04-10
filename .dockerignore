@@ -1,0 +1,14 @@
+.git
+.claude
+.vscode
+.github
+.gitignore
+.dockerignore
+.golangci.yml
+Taskfile.yml
+coverage.out
+docs/
+deployments/
+**/*_test.go
+*.md
+*.pdf

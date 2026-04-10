@@ -1,0 +1,28 @@
+version: '3'
+
+vars:
+  BINARY_NAME: server
+
+tasks:
+  run:
+    cmd: go run ./cmd/server/main.go
+
+  build:
+    cmd: go build -o ./bin/{{.BINARY_NAME}} ./cmd/server/main.go
+
+  test:
+    cmd: go test ./... -v -count=1
+
+  test:cover:
+    cmds:
+      - go test ./... -coverprofile=coverage.out
+      - go tool cover -func=coverage.out
+
+  lint:
+    cmd: golangci-lint run ./...
+
+  docker:up:
+    cmd: docker compose up --build -d
+
+  docker:down:
+    cmd: docker compose down
