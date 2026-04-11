@@ -2,6 +2,7 @@ name: green-api-client
 
 services:
   app:
+    image: ${APP_IMAGE:-greenapi-app:local}
     build:
       context: .
       dockerfile: Dockerfile
