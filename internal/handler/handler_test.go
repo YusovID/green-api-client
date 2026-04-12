@@ -249,7 +249,7 @@ func TestSendFileByURL(t *testing.T) {
 	}{
 		{
 			name:         "success",
-			body:         `{"idInstance":"123","apiTokenInstance":"abc","chatId":"79001234567@c.us","urlFile":"https://example.com/img.png","fileName":"img.png"}`,
+			body:         `{"idInstance":"123","apiTokenInstance":"abc","chatId":"79001234567@c.us","urlFile":"https://example.com/img.png"}`,
 			stubStatus:   http.StatusOK,
 			stubResponse: `{"idMessage":"3EB0C767D72"}`,
 			wantStatus:   http.StatusOK,
@@ -262,25 +262,19 @@ func TestSendFileByURL(t *testing.T) {
 		},
 		{
 			name:         "missing credentials",
-			body:         `{"chatId":"79001234567@c.us","urlFile":"https://example.com/img.png","fileName":"img.png"}`,
+			body:         `{"chatId":"79001234567@c.us","urlFile":"https://example.com/img.png"}`,
 			wantStatus:   http.StatusBadRequest,
 			wantErrField: true,
 		},
 		{
 			name:         "missing chatId",
-			body:         `{"idInstance":"123","apiTokenInstance":"abc","urlFile":"https://example.com/img.png","fileName":"img.png"}`,
+			body:         `{"idInstance":"123","apiTokenInstance":"abc","urlFile":"https://example.com/img.png"}`,
 			wantStatus:   http.StatusBadRequest,
 			wantErrField: true,
 		},
 		{
 			name:         "missing urlFile",
-			body:         `{"idInstance":"123","apiTokenInstance":"abc","chatId":"79001234567@c.us","fileName":"img.png"}`,
-			wantStatus:   http.StatusBadRequest,
-			wantErrField: true,
-		},
-		{
-			name:         "missing fileName",
-			body:         `{"idInstance":"123","apiTokenInstance":"abc","chatId":"79001234567@c.us","urlFile":"https://example.com/img.png"}`,
+			body:         `{"idInstance":"123","apiTokenInstance":"abc","chatId":"79001234567@c.us"}`,
 			wantStatus:   http.StatusBadRequest,
 			wantErrField: true,
 		},
@@ -292,7 +286,7 @@ func TestSendFileByURL(t *testing.T) {
 		},
 		{
 			name:         "upstream error",
-			body:         `{"idInstance":"123","apiTokenInstance":"abc","chatId":"79001234567@c.us","urlFile":"https://example.com/img.png","fileName":"img.png"}`,
+			body:         `{"idInstance":"123","apiTokenInstance":"abc","chatId":"79001234567@c.us","urlFile":"https://example.com/img.png"}`,
 			stubStatus:   http.StatusForbidden,
 			stubResponse: `forbidden`,
 			wantStatus:   http.StatusBadGateway,
@@ -316,6 +310,41 @@ func TestSendFileByURL(t *testing.T) {
 				require.NoError(t, json.Unmarshal(rec.Body.Bytes(), &resp))
 				assert.NotEmpty(t, resp.Error)
 			}
+		})
+	}
+}
+
+func TestSendFileByURL_FileNameDerivation(t *testing.T) {
+	tests := []struct {
+		name     string
+		urlFile  string
+		wantName string
+	}{
+		{name: "simple path", urlFile: "https://example.com/img.png", wantName: "img.png"},
+		{name: "nested path", urlFile: "https://example.com/path/to/document.pdf", wantName: "document.pdf"},
+		{name: "with query string", urlFile: "https://example.com/file.zip?token=abc", wantName: "file.zip"},
+		{name: "no path falls back to file", urlFile: "https://example.com", wantName: "file"},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			var sent map[string]any
+			ts := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+				_ = json.NewDecoder(r.Body).Decode(&sent)
+				w.Header().Set("Content-Type", "application/json")
+				w.WriteHeader(http.StatusOK)
+				_, _ = w.Write([]byte(`{"idMessage":"test"}`))
+			}))
+			t.Cleanup(ts.Close)
+
+			h := newTestHandler(t, ts.URL)
+
+			body := `{"idInstance":"123","apiTokenInstance":"abc","chatId":"79001234567@c.us","urlFile":"` + tt.urlFile + `"}`
+			rec := httptest.NewRecorder()
+			h.SendFileByURL(rec, postJSON("/api/sendFileByUrl", body))
+
+			require.Equal(t, http.StatusOK, rec.Code)
+			assert.Equal(t, tt.wantName, sent["fileName"])
 		})
 	}
 }

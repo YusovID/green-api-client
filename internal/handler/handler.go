@@ -4,6 +4,8 @@ import (
 	"encoding/json"
 	"log/slog"
 	"net/http"
+	"net/url"
+	"path"
 
 	"green-api-client/internal/greenapi"
 )
@@ -143,9 +145,8 @@ func (h *Handler) SendMessage(w http.ResponseWriter, r *http.Request) {
 // sendFileByURLRequest — тело запроса для sendFileByUrl.
 type sendFileByURLRequest struct {
 	credentials
-	ChatID   string `json:"chatId"`
-	URLFile  string `json:"urlFile"`
-	FileName string `json:"fileName"`
+	ChatID  string `json:"chatId"`
+	URLFile string `json:"urlFile"`
 }
 
 // SendFileByURL обрабатывает POST /api/sendFileByUrl.
@@ -161,21 +162,41 @@ func (h *Handler) SendFileByURL(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	if req.ChatID == "" || req.URLFile == "" || req.FileName == "" {
-		h.writeJSON(w, http.StatusBadRequest, errorResponse{Error: "chatId, urlFile and fileName are required"})
+	if req.ChatID == "" || req.URLFile == "" {
+		h.writeJSON(w, http.StatusBadRequest, errorResponse{Error: "chatId and urlFile are required"})
+		return
+	}
+
+	fileName, err := fileNameFromURL(req.URLFile)
+	if err != nil {
+		h.log.Warn("invalid urlFile", slog.String("op", op), slog.String("error", err.Error()))
+		h.writeJSON(w, http.StatusBadRequest, errorResponse{Error: "invalid urlFile"})
 		return
 	}
 
 	client := h.newClient(req.IDInstance, req.APITokenInstance)
 
-	data, err := client.SendFileByURL(r.Context(), req.ChatID, req.URLFile, req.FileName)
+	data, err := client.SendFileByURL(r.Context(), req.ChatID, req.URLFile, fileName)
 	if err != nil {
 		h.writeError(w, op, http.StatusBadGateway, err)
 		return
 	}
 
-	h.log.Info("file sent", slog.String("op", op), slog.String("chatId", req.ChatID), slog.String("fileName", req.FileName))
+	h.log.Info("file sent", slog.String("op", op), slog.String("chatId", req.ChatID), slog.String("fileName", fileName))
 	h.writeJSON(w, http.StatusOK, data)
+}
+
+// fileNameFromURL извлекает имя файла из последнего сегмента пути URL
+func fileNameFromURL(rawURL string) (string, error) {
+	u, err := url.Parse(rawURL)
+	if err != nil {
+		return "", err
+	}
+	name := path.Base(u.Path)
+	if name == "" || name == "." || name == "/" {
+		return "file", nil
+	}
+	return name, nil
 }
 
 // decodeJSON декодирует JSON из тела запроса. Возвращает false при ошибке (ответ уже записан).

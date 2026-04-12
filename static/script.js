@@ -54,7 +54,6 @@ const actions = {
       ...creds(),
       chatId: phoneToChatId($("filePhone").value),
       urlFile: $("fileUrl").value.trim(),
-      fileName: $("fileName").value.trim(),
     });
   },
 };
